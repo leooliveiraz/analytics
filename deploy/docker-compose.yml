@@ -1,0 +1,53 @@
+name: analytics
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: analytics-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-analytics}
+      POSTGRES_USER: ${POSTGRES_USER:-analytics}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-analytics}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-analytics} -d ${POSTGRES_DB:-analytics}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: analytics-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-analytics}
+      DB_USER: ${POSTGRES_USER:-analytics}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-analytics}
+      JWT_SECRET: ${JWT_SECRET:-change-me-please-32-bytes-minimum-secret}
+      SPRING_PROFILES_ACTIVE: prod
+      LIQUIBASE_CONTEXTS: prod
+    ports:
+      - "${API_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: analytics-web
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -1,0 +1,49 @@
+package com.analytics.ingestion
+
+import java.time.Instant
+import java.util.UUID
+
+data class EnrichedEvent(
+    val eventName: String,
+    val url: String?,
+    val path: String?,
+    val referrer: String?,
+    val referrerDomain: String?,
+    val utmSource: String?,
+    val utmMedium: String?,
+    val utmCampaign: String?,
+    val utmTerm: String?,
+    val utmContent: String?,
+    val browser: String?,
+    val os: String?,
+    val deviceType: String?,
+    val country: String?,
+    val region: String?,
+    val city: String?,
+    val language: String?,
+    val screenWidth: Int?,
+    val screenHeight: Int?,
+    val visitorId: String,
+    val sessionId: UUID,
+    val properties: Map<String, Any?>,
+    val occurredAt: Instant,
+)
+
+data class SessionUpsert(
+    val id: UUID,
+    val visitorId: String,
+    val startedAt: Instant,
+    val endedAt: Instant,
+    val pageviews: Int,
+    val entryPath: String?,
+    val exitPath: String?,
+    val isBounce: Boolean,
+    val referrerDomain: String?,
+    val utmSource: String?,
+    val utmMedium: String?,
+    val utmCampaign: String?,
+    val country: String?,
+    val browser: String?,
+    val os: String?,
+    val deviceType: String?,
+)

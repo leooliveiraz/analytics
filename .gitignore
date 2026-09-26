@@ -1,0 +1,31 @@
+# Java / Gradle
+.gradle/
+build/
+out/
+*.class
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin
+.kotlin/
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+
+# Env / secrets
+.env
+.env.local
+*.local
+
+# Node / frontend
+node_modules/
+dist/
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db

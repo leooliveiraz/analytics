@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <include file="changes/001-create-users.sql" relativeToChangelogFile="true"/>
+    <include file="changes/002-create-projects.sql" relativeToChangelogFile="true"/>
+    <include file="changes/003-create-project-members.sql" relativeToChangelogFile="true"/>
+    <include file="changes/004-create-api-keys.sql" relativeToChangelogFile="true"/>
+    <include file="changes/005-create-events-partitioned.sql" relativeToChangelogFile="true"/>
+    <include file="changes/006-create-events-indexes.sql" relativeToChangelogFile="true"/>
+    <include file="changes/007-create-sessions.sql" relativeToChangelogFile="true"/>
+    <include file="changes/008-create-rollups.sql" relativeToChangelogFile="true"/>
+    <include file="changes/009-seed-dev.sql" relativeToChangelogFile="true"/>
+    <include file="changes/010-create-refresh-tokens.sql" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>
