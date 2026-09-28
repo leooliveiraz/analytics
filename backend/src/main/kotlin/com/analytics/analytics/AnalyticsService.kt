@@ -1,8 +1,14 @@
 package com.analytics.analytics
 
 import com.analytics.analytics.dto.BreakdownResponse
+import com.analytics.analytics.dto.DimensionSeriesItem
+import com.analytics.analytics.dto.DimensionSeriesPoint
+import com.analytics.analytics.dto.DimensionTimeseriesResponse
 import com.analytics.analytics.dto.ElementStatRow
 import com.analytics.analytics.dto.EventRow
+import com.analytics.analytics.dto.FlowLink
+import com.analytics.analytics.dto.FlowNode
+import com.analytics.analytics.dto.FlowResponse
 import com.analytics.analytics.dto.GeoStatItem
 import com.analytics.analytics.dto.HeatmapResponse
 import com.analytics.analytics.dto.ImageStatRow
@@ -75,6 +81,89 @@ class AnalyticsService(
             limit.coerceIn(1, 100),
         )
         return BreakdownResponse(dimension, items)
+    }
+
+    @Transactional(readOnly = true)
+    fun timeseries(
+        projectId: UUID,
+        userId: UUID,
+        from: LocalDate,
+        to: LocalDate,
+        interval: String,
+        dimension: String,
+        limit: Int,
+    ): DimensionTimeseriesResponse {
+        val zone = timezone(projectId, userId, from, to)
+        val expression = DIMENSIONS[dimension.lowercase()]
+            ?: throw BadRequestException("Unsupported dimension: $dimension")
+        val safeInterval = validateInterval(interval)
+        val rows = analyticsRepository.dimensionTimeseries(
+            projectId,
+            startOfDay(from, zone),
+            startOfDay(to.plusDays(1), zone),
+            zone.id,
+            safeInterval,
+            expression,
+            limit.coerceIn(1, 10),
+        )
+        val series = rows
+            .groupBy { it.value }
+            .map { (value, valueRows) ->
+                DimensionSeriesItem(
+                    value = value,
+                    points = valueRows
+                        .sortedBy { it.bucket }
+                        .map { DimensionSeriesPoint(it.bucket, it.visitors, it.pageviews) },
+                )
+            }
+            .sortedByDescending { item -> item.points.sumOf { it.visitors } }
+        return DimensionTimeseriesResponse(
+            dimension = dimension.lowercase(),
+            interval = safeInterval,
+            from = from.toString(),
+            to = to.toString(),
+            series = series,
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun flow(
+        projectId: UUID,
+        userId: UUID,
+        from: LocalDate,
+        to: LocalDate,
+        limit: Int,
+    ): FlowResponse {
+        val zone = timezone(projectId, userId, from, to)
+        val rows = analyticsRepository.flowRows(projectId, startOfDay(from, zone), startOfDay(to.plusDays(1), zone))
+
+        val linkWeights = mutableMapOf<Pair<String, String>, Long>()
+        val nodeLabels = mutableMapOf<String, Pair<String, String>>()
+        val nodeVisitors = mutableMapOf<String, Long>()
+        rows.forEach { row ->
+            val sourceId = "source:${row.source}"
+            val entryId = "entry:${row.entry}"
+            val exitId = "exit:${row.exit}"
+            nodeLabels[sourceId] = "source" to row.source
+            nodeLabels[entryId] = "entry" to row.entry
+            nodeLabels[exitId] = "exit" to row.exit
+            linkWeights.merge(sourceId to entryId, row.visitors, Long::plus)
+            linkWeights.merge(entryId to exitId, row.visitors, Long::plus)
+            nodeVisitors.merge(sourceId, row.visitors, Long::plus)
+            nodeVisitors.merge(entryId, row.visitors, Long::plus)
+            nodeVisitors.merge(exitId, row.visitors, Long::plus)
+        }
+
+        val links = linkWeights.entries
+            .sortedByDescending { it.value }
+            .take(limit.coerceIn(1, 50))
+            .map { FlowLink(it.key.first, it.key.second, it.value) }
+        val referenced = links.flatMap { listOf(it.source, it.target) }.toSet()
+        val nodes = referenced.map { id ->
+            val (column, label) = nodeLabels.getValue(id)
+            FlowNode(id = id, label = label, column = column, visitors = nodeVisitors[id] ?: 0)
+        }
+        return FlowResponse(nodes, links)
     }
 
     @Transactional(readOnly = true)

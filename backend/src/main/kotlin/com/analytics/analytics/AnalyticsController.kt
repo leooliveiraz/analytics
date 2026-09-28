@@ -1,8 +1,10 @@
 package com.analytics.analytics
 
 import com.analytics.analytics.dto.BreakdownResponse
+import com.analytics.analytics.dto.DimensionTimeseriesResponse
 import com.analytics.analytics.dto.ElementStatRow
 import com.analytics.analytics.dto.EventRow
+import com.analytics.analytics.dto.FlowResponse
 import com.analytics.analytics.dto.GeoStatItem
 import com.analytics.analytics.dto.HeatmapResponse
 import com.analytics.analytics.dto.ImageStatRow
@@ -53,6 +55,26 @@ class AnalyticsController(private val analyticsService: AnalyticsService) {
         @RequestParam(defaultValue = "10") limit: Int,
     ): BreakdownResponse =
         analyticsService.breakdown(projectId, SecurityUtils.currentUserId(), from, to, dimension, limit)
+
+    @GetMapping("/timeseries")
+    fun timeseries(
+        @PathVariable projectId: UUID,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
+        @RequestParam(defaultValue = "day") interval: String,
+        @RequestParam dimension: String,
+        @RequestParam(defaultValue = "5") limit: Int,
+    ): DimensionTimeseriesResponse =
+        analyticsService.timeseries(projectId, SecurityUtils.currentUserId(), from, to, interval, dimension, limit)
+
+    @GetMapping("/flow")
+    fun flow(
+        @PathVariable projectId: UUID,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
+        @RequestParam(defaultValue = "15") limit: Int,
+    ): FlowResponse =
+        analyticsService.flow(projectId, SecurityUtils.currentUserId(), from, to, limit)
 
     @GetMapping("/realtime")
     fun realtime(

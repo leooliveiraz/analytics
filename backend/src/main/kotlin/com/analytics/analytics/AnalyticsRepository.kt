@@ -1,6 +1,7 @@
 package com.analytics.analytics
 
 import com.analytics.analytics.dto.BreakdownItem
+import com.analytics.analytics.dto.DimensionBucketRow
 import com.analytics.analytics.dto.ElementStatRow
 import com.analytics.analytics.dto.EventRow
 import com.analytics.analytics.dto.GeoStatItem
@@ -81,6 +82,75 @@ class AnalyticsRepository(private val jdbc: NamedParameterJdbcTemplate) {
                 value = rs.getString("value") ?: "unknown",
                 visitors = rs.getLong("visitors"),
                 pageviews = rs.getLong("pageviews"),
+            )
+        }
+    }
+
+    fun dimensionTimeseries(
+        projectId: java.util.UUID,
+        from: Instant,
+        to: Instant,
+        timezone: String,
+        interval: String,
+        dimensionExpression: String,
+        limit: Int,
+    ): List<DimensionBucketRow> {
+        val sql = """
+            WITH top_values AS (
+                SELECT $dimensionExpression AS value
+                FROM events
+                WHERE project_id = :projectId
+                  AND occurred_at >= :from AND occurred_at < :to
+                GROUP BY value
+                ORDER BY COUNT(DISTINCT visitor_id) DESC
+                LIMIT :limit
+            )
+            SELECT to_char(date_trunc(:interval, e.occurred_at AT TIME ZONE :tz), 'YYYY-MM-DD"T"HH24:MI:SS') AS bucket,
+                   $dimensionExpression AS value,
+                   COUNT(DISTINCT e.visitor_id) AS visitors,
+                   COUNT(*) FILTER (WHERE e.event_name = 'pageview') AS pageviews
+            FROM events e
+            JOIN top_values tv ON tv.value = $dimensionExpression
+            WHERE e.project_id = :projectId
+              AND e.occurred_at >= :from AND e.occurred_at < :to
+            GROUP BY bucket, value
+            ORDER BY bucket
+        """.trimIndent()
+        val params = timeParams(projectId, from, to)
+            .addValue("tz", timezone)
+            .addValue("interval", interval)
+            .addValue("limit", limit)
+        return jdbc.query(sql, params) { rs, _ ->
+            DimensionBucketRow(
+                value = rs.getString("value") ?: "unknown",
+                bucket = rs.getString("bucket"),
+                visitors = rs.getLong("visitors"),
+                pageviews = rs.getLong("pageviews"),
+            )
+        }
+    }
+
+    fun flowRows(
+        projectId: java.util.UUID,
+        from: Instant,
+        to: Instant,
+    ): List<FlowRow> {
+        val sql = """
+            SELECT COALESCE(NULLIF(referrer_domain, ''), 'Direct') AS source,
+                   COALESCE(NULLIF(entry_path, ''), '(unknown)') AS entry,
+                   COALESCE(NULLIF(exit_path, ''), '(unknown)') AS exit,
+                   COUNT(*) AS visitors
+            FROM sessions
+            WHERE project_id = :projectId
+              AND started_at >= :from AND started_at < :to
+            GROUP BY source, entry, exit
+        """.trimIndent()
+        return jdbc.query(sql, timeParams(projectId, from, to)) { rs, _ ->
+            FlowRow(
+                source = rs.getString("source"),
+                entry = rs.getString("entry"),
+                exit = rs.getString("exit"),
+                visitors = rs.getLong("visitors"),
             )
         }
     }
@@ -587,3 +657,10 @@ class AnalyticsRepository(private val jdbc: NamedParameterJdbcTemplate) {
             .addValue("from", Timestamp.from(from))
             .addValue("to", Timestamp.from(to))
 }
+
+data class FlowRow(
+    val source: String,
+    val entry: String,
+    val exit: String,
+    val visitors: Long,
+)

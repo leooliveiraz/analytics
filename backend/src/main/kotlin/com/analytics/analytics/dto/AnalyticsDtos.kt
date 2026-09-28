@@ -28,6 +28,50 @@ data class BreakdownResponse(
     val items: List<BreakdownItem>,
 )
 
+data class DimensionBucketRow(
+    val value: String,
+    val bucket: String,
+    val visitors: Long,
+    val pageviews: Long,
+)
+
+data class DimensionSeriesPoint(
+    val bucket: String,
+    val visitors: Long,
+    val pageviews: Long,
+)
+
+data class DimensionSeriesItem(
+    val value: String,
+    val points: List<DimensionSeriesPoint>,
+)
+
+data class DimensionTimeseriesResponse(
+    val dimension: String,
+    val interval: String,
+    val from: String,
+    val to: String,
+    val series: List<DimensionSeriesItem>,
+)
+
+data class FlowNode(
+    val id: String,
+    val label: String,
+    val column: String,
+    val visitors: Long,
+)
+
+data class FlowLink(
+    val source: String,
+    val target: String,
+    val visitors: Long,
+)
+
+data class FlowResponse(
+    val nodes: List<FlowNode>,
+    val links: List<FlowLink>,
+)
+
 data class OverviewResponse(
     val visitors: Long,
     val pageviews: Long,

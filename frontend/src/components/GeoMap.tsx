@@ -25,9 +25,10 @@ interface GeoMapProps {
 }
 
 function interpolate(ratio: number): string {
-  const from = [40, 70, 160];
-  const to = [126, 231, 135];
-  const color = from.map((value, index) => Math.round(value + (to[index] - value) * ratio));
+  const clamped = Math.max(0, Math.min(1, ratio));
+  const from = [38, 54, 92];
+  const to = [110, 168, 254];
+  const color = from.map((value, index) => Math.round(value + (to[index] - value) * clamped));
   return `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
 }
 

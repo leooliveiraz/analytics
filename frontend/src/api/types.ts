@@ -80,6 +80,43 @@ export interface BreakdownResponse {
   items: BreakdownItem[];
 }
 
+export interface DimensionSeriesPoint {
+  bucket: string;
+  visitors: number;
+  pageviews: number;
+}
+
+export interface DimensionSeriesItem {
+  value: string;
+  points: DimensionSeriesPoint[];
+}
+
+export interface DimensionTimeseriesResponse {
+  dimension: string;
+  interval: string;
+  from: string;
+  to: string;
+  series: DimensionSeriesItem[];
+}
+
+export interface FlowNode {
+  id: string;
+  label: string;
+  column: string;
+  visitors: number;
+}
+
+export interface FlowLink {
+  source: string;
+  target: string;
+  visitors: number;
+}
+
+export interface FlowResponse {
+  nodes: FlowNode[];
+  links: FlowLink[];
+}
+
 export interface RealtimePoint {
   bucket: string;
   pageviews: number;
