@@ -342,18 +342,30 @@ select {
 .heatmap-frame {
   position: relative;
   width: 100%;
-  height: 700px;
-  overflow: hidden;
+  height: 72vh;
+  overflow: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #0b0d12;
 }
 
+.heatmap-scaler {
+  position: relative;
+}
+
+.heatmap-content {
+  position: relative;
+  transform-origin: 0 0;
+}
+
 .heatmap-iframe {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
   background: #fff;
+  display: block;
 }
 
 .heatmap-canvas {

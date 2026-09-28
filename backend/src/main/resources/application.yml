@@ -46,6 +46,7 @@ app:
   ingestion:
     visitor-salt: ${VISITOR_SALT:dev-visitor-salt-change-me}
     filter-bots: ${INGESTION_FILTER_BOTS:true}
+    anonymize-ip: ${INGESTION_ANONYMIZE_IP:false}
     rate-limit:
       enabled: ${INGESTION_RATE_LIMIT_ENABLED:true}
       capacity: ${INGESTION_RATE_LIMIT_CAPACITY:240}

@@ -18,6 +18,7 @@ calor (clique/movimento/scroll) e mapa de acessos por país.
 - [Ingestão via REST](#ingestão-via-rest)
 - [API de analytics](#api-de-analytics)
 - [GeoIP (mapa por país)](#geoip-mapa-por-país)
+- [Privacidade e LGPD](#privacidade-e-lgpd)
 - [Arquitetura de dados](#arquitetura-de-dados)
 - [Operação (logs, backup, atualização)](#operação-logs-backup-atualização)
 - [HTTPS com domínio (Caddy)](#https-com-domínio-caddy)
@@ -166,6 +167,7 @@ Definidas em `deploy/.env` (usadas pelo `docker-compose.yml`). Veja `deploy/.env
 | `CORS_ALLOWED_ORIGIN_PATTERNS` | `http://localhost:[*],http://127.0.0.1:[*]` | Origens permitidas p/ ingestão cross-domain. Use `*` para liberar |
 | `RETENTION_EVENTS_MONTHS` | `12` | Meses de eventos retidos (`144` = 12 anos) |
 | `INGESTION_FILTER_BOTS` | `true` | Descarta eventos de bots |
+| `INGESTION_ANONYMIZE_IP` | `false` | Zera o último octeto (IPv4)/últimos 80 bits (IPv6) do IP antes de geolocalizar e hashear |
 | `INGESTION_RATE_LIMIT_CAPACITY` / `_WINDOW` | `240` / `1m` | Limite por chave/IP |
 | `GEOIP_DB` | `/app/geoip/GeoLite2-City.mmdb` | Caminho do `.mmdb` no container |
 | `GEOIPUPDATE_ACCOUNT_ID` / `_LICENSE_KEY` | vazio | Credenciais MaxMind p/ atualização automática |
@@ -358,6 +360,45 @@ bash deploy/geoip/update.sh          # no Windows: .\deploy\geoip\update.ps1
 # (B) manter atualizado sozinho (container)
 cd deploy && docker compose --profile geoip up -d
 ```
+
+## Privacidade e LGPD
+
+Este projeto é **self-hosted**: os dados ficam no seu servidor e não são compartilhados com terceiros.
+Ainda assim, você é o **controlador** e o LGPD se aplica porque há tratamento de **dados pessoais**
+(o IP é dado pessoal no Brasil), mesmo com `visitor_id` pseudônimo.
+
+**O que é coletado**: IP (usado para geolocalização e para o hash do visitante), User-Agent, idioma,
+tela, URL/referrer/UTM e dados de interação (cliques, seções, scroll, imagens). No navegador ficam apenas
+`an_visitor`/`an_session` no `localStorage` (identificadores aleatórios, não cookies).
+
+**Responsabilidades mínimas**:
+
+- Ter uma **base legal** (art. 7) — normalmente **legítimo interesse** para analytics próprio, ou
+  **consentimento** se houver perfilamento/heatmap detalhado.
+- Publicar uma **Política de Privacidade** informando finalidade, dados, base legal, retenção e direitos.
+- Definir **retenção** (`RETENTION_EVENTS_MONTHS`) coerente com o que a política declara.
+- Garantir **segurança** (use HTTPS em produção).
+- Atender aos **direitos do titular** (art. 18).
+
+**Minimização (recomendado)**:
+
+- `INGESTION_ANONYMIZE_IP=true` — não usa o IP exato (zera o último octeto / últimos 80 bits); o país
+  continua correto, cidade/região podem degradar.
+- Deixe `GEOIP_DB` vazio se não precisar de mapa.
+- Não habilite `data-heatmap-move` nem `data-auto-click` sem necessidade.
+
+**Consentimento (opcional)**: o snippet pausa a coleta até o aceite.
+
+```html
+<script defer src="https://SEU_HOST/js/analytics.js"
+        data-key="pk_..."
+        data-consent="true"></script>
+
+<!-- no seu banner de cookies/privacidade -->
+<button type="button" onclick="window.analytics.consent(true)">Aceitar</button>
+```
+
+> Este texto é orientação técnica e **não constitui aconselhamento jurídico**. Valide com um advogado/DPO.
 
 ## Arquitetura de dados
 

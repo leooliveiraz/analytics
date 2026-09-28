@@ -131,6 +131,8 @@ data class HeatmapResponse(
     val type: String,
     val path: String?,
     val maxWeight: Long,
+    val viewportWidth: Int,
+    val pageHeight: Int,
     val points: List<HeatmapPoint>,
 )
 

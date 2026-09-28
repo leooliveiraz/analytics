@@ -33,6 +33,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-analytics}
       JWT_SECRET: ${JWT_SECRET:-change-me-please-32-bytes-minimum-secret}
       VISITOR_SALT: ${VISITOR_SALT:-change-me-visitor-salt}
+      INGESTION_ANONYMIZE_IP: ${INGESTION_ANONYMIZE_IP:-false}
       CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:[*],https://localhost:[*],http://127.0.0.1:[*],https://127.0.0.1:[*]}
       RETENTION_EVENTS_MONTHS: ${RETENTION_EVENTS_MONTHS:-144}
       GEOIP_DB: ${GEOIP_DB:-/app/geoip/GeoLite2-City.mmdb}

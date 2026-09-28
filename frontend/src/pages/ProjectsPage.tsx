@@ -30,9 +30,28 @@ export function ProjectsPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : "Falha ao criar projeto"),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (projectId: string) =>
+      api<void>(`/api/v1/projects/${projectId}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      setError(null);
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : "Falha ao excluir projeto"),
+  });
+
   function handleCreate(event: FormEvent) {
     event.preventDefault();
     createMutation.mutate();
+  }
+
+  function handleDelete(project: Project) {
+    const confirmed = window.confirm(
+      `Excluir o projeto "${project.name}" e TODOS os dados (eventos, sessões, chaves e membros)?\n\nEsta ação não pode ser desfeita.`,
+    );
+    if (confirmed) {
+      deleteMutation.mutate(project.id);
+    }
   }
 
   const projects = projectsQuery.data ?? [];
@@ -70,15 +89,26 @@ export function ProjectsPage() {
 
       <div className="grid">
         {projects.map((project) => (
-          <Link key={project.id} className="project-card" to={`/projects/${project.id}`}>
-            <div>
+          <div key={project.id} className="project-card">
+            <Link to={`/projects/${project.id}`} style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600 }}>{project.name}</div>
               <div className="muted" style={{ fontSize: 13 }}>
                 {project.domain ?? "sem domínio"} · {project.timezone}
               </div>
-            </div>
+            </Link>
             <span className="badge">{project.role}</span>
-          </Link>
+            {project.role === "OWNER" && (
+              <button
+                className="btn btn-sm btn-danger"
+                type="button"
+                title="Excluir projeto"
+                onClick={() => handleDelete(project)}
+                disabled={deleteMutation.isPending}
+              >
+                Excluir
+              </button>
+            )}
+          </div>
         ))}
       </div>
     </div>

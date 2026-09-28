@@ -249,20 +249,40 @@ class AnalyticsService(
             "scroll" -> "pageleave"
             else -> throw BadRequestException("Unsupported heatmap type: $type")
         }
+        val fromInstant = startOfDay(from, zone)
+        val toInstant = startOfDay(to.plusDays(1), zone)
+        val cleanPath = path?.takeIf { it.isNotBlank() }
+        val cleanDevice = device?.takeIf { it.isNotBlank() }
         val points = analyticsRepository.heatmap(
             projectId,
-            startOfDay(from, zone),
-            startOfDay(to.plusDays(1), zone),
+            fromInstant,
+            toInstant,
             eventName,
-            path?.takeIf { it.isNotBlank() },
-            device?.takeIf { it.isNotBlank() },
+            cleanPath,
+            cleanDevice,
             scroll,
             limit.coerceIn(100, 20000),
+        )
+        val viewportWidth = analyticsRepository.representativeViewportWidth(
+            projectId,
+            fromInstant,
+            toInstant,
+            cleanPath,
+            cleanDevice,
         )
         return HeatmapResponse(
             type = normalized,
             path = path,
             maxWeight = points.maxOfOrNull { it.weight } ?: 0L,
+            viewportWidth = viewportWidth,
+            pageHeight = analyticsRepository.maxPageHeight(
+                projectId,
+                fromInstant,
+                toInstant,
+                cleanPath,
+                cleanDevice,
+                viewportWidth,
+            ),
             points = points,
         )
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
@@ -15,6 +15,8 @@ const TYPES = [
   { key: "scroll", label: "Scroll" },
 ];
 
+const DEVICE_WIDTHS: Record<string, number> = { desktop: 1440, tablet: 834, mobile: 390 };
+
 export function HeatmapPage() {
   const { projectId = "" } = useParams();
   const { days, setDays, from, to } = useRange();
@@ -22,6 +24,24 @@ export function HeatmapPage() {
   const [path, setPath] = useState("/");
   const [device, setDevice] = useState("");
   const [pageUrl, setPageUrl] = useState("");
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [frameWidth, setFrameWidth] = useState(0);
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) {
+      return;
+    }
+    const update = () => setFrameWidth(el.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   const projectQuery = useQuery({
     queryKey: ["project", projectId],
@@ -45,6 +65,15 @@ export function HeatmapPage() {
   const derivedUrl =
     project?.domain && path ? `https://${project.domain}${path.startsWith("/") ? path : `/${path}`}` : "";
   const previewUrl = pageUrl.trim() || derivedUrl;
+
+  const data = query.data;
+  const viewportWidth = data?.viewportWidth && data.viewportWidth > 0
+    ? data.viewportWidth
+    : DEVICE_WIDTHS[device] ?? 1440;
+  const pageHeight = data?.pageHeight && data.pageHeight > 0 ? data.pageHeight : 1000;
+  const scale = frameWidth > 0 ? Math.min(1, frameWidth / viewportWidth) : 1;
+  const scaledWidth = Math.round(viewportWidth * scale);
+  const scaledHeight = Math.round(pageHeight * scale);
 
   return (
     <div className="stack">
@@ -72,11 +101,11 @@ export function HeatmapPage() {
       <div className="panel">
         <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
           <input placeholder="Página (ex: /)" value={path} onChange={(e) => setPath(e.target.value)} style={{ maxWidth: 200 }} />
-          <select value={device} onChange={(e) => setDevice(e.target.value)} style={{ maxWidth: 160 }}>
+          <select value={device} onChange={(e) => setDevice(e.target.value)} style={{ maxWidth: 170 }}>
             <option value="">Todos os dispositivos</option>
             <option value="desktop">Desktop</option>
-            <option value="mobile">Mobile</option>
             <option value="tablet">Tablet</option>
+            <option value="mobile">Mobile</option>
           </select>
           <input
             placeholder="URL para pré-visualizar"
@@ -84,24 +113,31 @@ export function HeatmapPage() {
             onChange={(e) => setPageUrl(e.target.value)}
             style={{ flex: 1, minWidth: 240 }}
           />
-          <span className="muted">{formatNumber(query.data?.points.length ?? 0)} pontos</span>
+          <span className="muted">{formatNumber(data?.points.length ?? 0)} pontos</span>
         </div>
       </div>
 
       <div className="panel">
-        <div className="heatmap-frame">
-          {previewUrl ? (
-            <iframe src={previewUrl} title="Pré-visualização" className="heatmap-iframe" loading="lazy" />
-          ) : (
-            <div className="heatmap-empty muted">
-              Informe a URL da página para sobrepor o mapa de calor.
+        <div className="heatmap-frame" ref={frameRef}>
+          <div className="heatmap-scaler" style={{ width: scaledWidth, height: scaledHeight }}>
+            <div
+              className="heatmap-content"
+              style={{ width: viewportWidth, height: pageHeight, transform: `scale(${scale})` }}
+            >
+              {previewUrl ? (
+                <iframe src={previewUrl} title="Pré-visualização" className="heatmap-iframe" loading="lazy" />
+              ) : (
+                <div className="heatmap-empty muted">
+                  Informe a URL da página para sobrepor o mapa de calor.
+                </div>
+              )}
+              <HeatmapCanvas points={data?.points ?? []} maxWeight={data?.maxWeight ?? 0} type={type} />
             </div>
-          )}
-          <HeatmapCanvas points={query.data?.points ?? []} maxWeight={query.data?.maxWeight ?? 0} type={type} />
+          </div>
         </div>
         <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-          O mapa é desenhado em porcentagem sobre a página. Se o site bloquear iframe, os pontos continuam visíveis
-          sobre o painel.
+          Renderizado na largura real gravada ({viewportWidth}px, escala {(scale * 100).toFixed(0)}%) e altura de{" "}
+          {pageHeight}px. Selecione um dispositivo para evitar misturar layouts diferentes.
         </p>
       </div>
     </div>

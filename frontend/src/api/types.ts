@@ -156,6 +156,8 @@ export interface HeatmapResponse {
   type: string;
   path: string | null;
   maxWeight: number;
+  viewportWidth: number;
+  pageHeight: number;
   points: HeatmapPoint[];
 }
 

@@ -11,6 +11,7 @@ import com.analytics.project.dto.ProjectResponse
 import com.analytics.project.dto.UpdateMemberRoleRequest
 import com.analytics.project.dto.UpdateProjectRequest
 import com.analytics.user.UserRepository
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -20,6 +21,7 @@ class ProjectService(
     private val projectRepository: ProjectRepository,
     private val projectMemberRepository: ProjectMemberRepository,
     private val userRepository: UserRepository,
+    private val jdbc: NamedParameterJdbcTemplate,
 ) {
 
     @Transactional
@@ -71,6 +73,11 @@ class ProjectService(
     @Transactional
     fun delete(projectId: UUID, userId: UUID) {
         requireRole(projectId, userId, Role.OWNER)
+        val params = mapOf("projectId" to projectId)
+        jdbc.update("DELETE FROM events WHERE project_id = :projectId", params)
+        jdbc.update("DELETE FROM sessions WHERE project_id = :projectId", params)
+        jdbc.update("DELETE FROM project_daily_stats WHERE project_id = :projectId", params)
+        jdbc.update("DELETE FROM dimension_daily_stats WHERE project_id = :projectId", params)
         projectRepository.deleteById(projectId)
     }
 

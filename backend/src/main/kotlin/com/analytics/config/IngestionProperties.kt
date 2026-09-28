@@ -7,6 +7,7 @@ import java.time.Duration
 data class IngestionProperties(
     val visitorSalt: String,
     val filterBots: Boolean = true,
+    val anonymizeIp: Boolean = false,
     val rateLimit: RateLimit = RateLimit(),
 ) {
     data class RateLimit(

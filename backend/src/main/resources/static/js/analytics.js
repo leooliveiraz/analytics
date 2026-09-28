@@ -283,7 +283,10 @@
     contextEvent("pageleave", {
       durationMs: durationMs,
       engagedMs: engagedMs,
-      scrollPct: maxScroll
+      scrollPct: maxScroll,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      pageHeight: Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0)
     });
     flushSections();
     flushMoves();

@@ -6,6 +6,7 @@ import com.analytics.ingestion.dto.IngestEventDto
 import com.analytics.ingestion.dto.IngestRequest
 import com.analytics.ingestion.dto.IngestResponse
 import org.springframework.stereotype.Service
+import java.net.InetAddress
 import java.net.URI
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -26,7 +27,10 @@ class IngestionService(
     fun ingest(apiKey: String?, clientIp: String?, userAgent: String?, request: IngestRequest): IngestResponse {
         val projectId = projectKeyAuthenticator.resolveProjectId(apiKey)
         val client = userAgentService.parse(userAgent)
-        val geo = geoIpService.lookup(clientIp)
+        // With anonymizeIp, the last octet (IPv4) / last 80 bits (IPv6) are zeroed
+        // before geolocation and visitor hashing, so the exact IP is never used.
+        val effectiveIp = if (properties.anonymizeIp) anonymizeIp(clientIp) else clientIp
+        val geo = geoIpService.lookup(effectiveIp)
 
         var dropped = 0
         val enriched = ArrayList<EnrichedEvent>(request.events.size)
@@ -35,7 +39,7 @@ class IngestionService(
                 dropped++
                 continue
             }
-            enriched += enrich(projectId, dto, clientIp, userAgent, client, geo)
+            enriched += enrich(projectId, dto, effectiveIp, userAgent, client, geo)
         }
 
         eventJdbcRepository.insertAll(projectId, enriched)
@@ -170,4 +174,18 @@ class IngestionService(
     private fun Map<String, Any?>.int(key: String): Int? = (this[key] as? Number)?.toInt()
 
     private fun Map<String, Any?>.dbl(key: String): Double? = (this[key] as? Number)?.toDouble()
+
+    private fun anonymizeIp(ip: String?): String? {
+        if (ip.isNullOrBlank()) {
+            return ip
+        }
+        val address = runCatching { InetAddress.getByName(ip) }.getOrNull() ?: return ip
+        val bytes = address.address
+        when (bytes.size) {
+            4 -> bytes[3] = 0
+            16 -> for (i in 6 until 16) bytes[i] = 0
+            else -> return ip
+        }
+        return runCatching { InetAddress.getByAddress(bytes).hostAddress }.getOrNull() ?: ip
+    }
 }

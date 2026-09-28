@@ -441,6 +441,64 @@ class AnalyticsRepository(private val jdbc: NamedParameterJdbcTemplate) {
         }
     }
 
+    fun representativeViewportWidth(
+        projectId: java.util.UUID,
+        from: Instant,
+        to: Instant,
+        path: String?,
+        deviceType: String?,
+    ): Int {
+        val conditions = StringBuilder(
+            "project_id = :projectId AND occurred_at >= :from AND occurred_at < :to AND viewport_width IS NOT NULL",
+        )
+        val params = timeParams(projectId, from, to)
+        path?.let {
+            conditions.append(" AND path = :path")
+            params.addValue("path", it)
+        }
+        deviceType?.let {
+            conditions.append(" AND device_type = :deviceType")
+            params.addValue("deviceType", it)
+        }
+        val sql = """
+            SELECT viewport_width
+            FROM events
+            WHERE $conditions
+            GROUP BY viewport_width
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+        """.trimIndent()
+        return jdbc.query(sql, params) { rs, _ -> rs.getInt("viewport_width") }.firstOrNull() ?: 0
+    }
+
+    fun maxPageHeight(
+        projectId: java.util.UUID,
+        from: Instant,
+        to: Instant,
+        path: String?,
+        deviceType: String?,
+        viewportWidth: Int,
+    ): Int {
+        val conditions = StringBuilder(
+            "project_id = :projectId AND occurred_at >= :from AND occurred_at < :to AND page_height IS NOT NULL",
+        )
+        val params = timeParams(projectId, from, to)
+        path?.let {
+            conditions.append(" AND path = :path")
+            params.addValue("path", it)
+        }
+        deviceType?.let {
+            conditions.append(" AND device_type = :deviceType")
+            params.addValue("deviceType", it)
+        }
+        if (viewportWidth > 0) {
+            conditions.append(" AND viewport_width = :viewportWidth")
+            params.addValue("viewportWidth", viewportWidth)
+        }
+        val sql = "SELECT COALESCE(MAX(page_height), 0) AS h FROM events WHERE $conditions"
+        return jdbc.query(sql, params) { rs, _ -> rs.getInt("h") }.firstOrNull() ?: 0
+    }
+
     fun geo(projectId: java.util.UUID, from: Instant, to: Instant): List<GeoStatItem> {
         val sql = """
             SELECT country,
