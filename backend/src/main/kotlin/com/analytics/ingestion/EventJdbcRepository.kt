@@ -49,6 +49,25 @@ class EventJdbcRepository(
             .addValue("screenHeight", event.screenHeight)
             .addValue("visitorId", event.visitorId)
             .addValue("sessionId", event.sessionId)
+            .addValue("elementTag", event.elementTag)
+            .addValue("elementSelector", event.elementSelector)
+            .addValue("elementText", event.elementText)
+            .addValue("elementId", event.elementId)
+            .addValue("href", event.href)
+            .addValue("clickX", event.clickX)
+            .addValue("clickY", event.clickY)
+            .addValue("clickXPct", event.clickXPct)
+            .addValue("clickYPct", event.clickYPct)
+            .addValue("viewportWidth", event.viewportWidth)
+            .addValue("viewportHeight", event.viewportHeight)
+            .addValue("pageHeight", event.pageHeight)
+            .addValue("durationMs", event.durationMs)
+            .addValue("engagedMs", event.engagedMs)
+            .addValue("scrollPct", event.scrollPct)
+            .addValue("imageKey", event.imageKey)
+            .addValue("imageAlt", event.imageAlt)
+            .addValue("dwellMs", event.dwellMs)
+            .addValue("sectionKey", event.sectionKey)
             .addValue("properties", objectMapper.writeValueAsString(event.properties))
             .addValue("occurredAt", java.sql.Timestamp.from(event.occurredAt))
 
@@ -79,12 +98,24 @@ class EventJdbcRepository(
                 project_id, event_name, url, path, referrer, referrer_domain,
                 utm_source, utm_medium, utm_campaign, utm_term, utm_content,
                 browser, os, device_type, country, region, city, language,
-                screen_width, screen_height, visitor_id, session_id, properties, occurred_at
+                screen_width, screen_height, visitor_id, session_id,
+                element_tag, element_selector, element_text, element_id, href,
+                click_x, click_y, click_x_pct, click_y_pct,
+                viewport_width, viewport_height, page_height,
+                duration_ms, engaged_ms, scroll_pct,
+                image_key, image_alt, dwell_ms, section_key,
+                properties, occurred_at
             ) VALUES (
                 :projectId, :eventName, :url, :path, :referrer, :referrerDomain,
                 :utmSource, :utmMedium, :utmCampaign, :utmTerm, :utmContent,
                 :browser, :os, :deviceType, :country, :region, :city, :language,
-                :screenWidth, :screenHeight, :visitorId, :sessionId, CAST(:properties AS jsonb), :occurredAt
+                :screenWidth, :screenHeight, :visitorId, :sessionId,
+                :elementTag, :elementSelector, :elementText, :elementId, :href,
+                :clickX, :clickY, :clickXPct, :clickYPct,
+                :viewportWidth, :viewportHeight, :pageHeight,
+                :durationMs, :engagedMs, :scrollPct,
+                :imageKey, :imageAlt, :dwellMs, :sectionKey,
+                CAST(:properties AS jsonb), :occurredAt
             )
         """.trimIndent()
 

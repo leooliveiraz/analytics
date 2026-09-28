@@ -15,5 +15,7 @@
     <include file="changes/008-create-rollups.sql" relativeToChangelogFile="true"/>
     <include file="changes/009-seed-dev.sql" relativeToChangelogFile="true"/>
     <include file="changes/010-create-refresh-tokens.sql" relativeToChangelogFile="true"/>
+    <include file="changes/011-add-detailed-event-columns.sql" relativeToChangelogFile="true"/>
+    <include file="changes/012-detailed-event-indexes.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

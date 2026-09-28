@@ -86,3 +86,62 @@ data class PageResponse<T>(
     val size: Int,
     val total: Long,
 )
+
+data class PageMetricRow(
+    val path: String,
+    val pageviews: Long,
+    val visitors: Long,
+    val entries: Long,
+    val avgTimeMs: Double,
+    val avgScrollPct: Double,
+)
+
+data class ElementStatRow(
+    val selector: String,
+    val eventName: String,
+    val text: String?,
+    val tag: String?,
+    val clicks: Long,
+    val visitors: Long,
+    val sessions: Long,
+)
+
+data class ImageStatRow(
+    val imageKey: String,
+    val imageAlt: String?,
+    val impressions: Long,
+    val sessions: Long,
+    val avgDwellMs: Double,
+)
+
+data class SectionStatRow(
+    val sectionKey: String,
+    val views: Long,
+    val visitors: Long,
+    val avgDwellMs: Double,
+)
+
+data class HeatmapPoint(
+    val x: Double,
+    val y: Double,
+    val weight: Long,
+)
+
+data class HeatmapResponse(
+    val type: String,
+    val path: String?,
+    val maxWeight: Long,
+    val points: List<HeatmapPoint>,
+)
+
+data class GeoStatItem(
+    val country: String,
+    val visitors: Long,
+    val pageviews: Long,
+)
+
+data class SessionDetailResponse(
+    val session: SessionRow,
+    val events: List<EventRow>,
+)
+

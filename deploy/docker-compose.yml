@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-analytics}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-analytics}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -32,10 +32,16 @@ services:
       DB_USER: ${POSTGRES_USER:-analytics}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-analytics}
       JWT_SECRET: ${JWT_SECRET:-change-me-please-32-bytes-minimum-secret}
+      VISITOR_SALT: ${VISITOR_SALT:-change-me-visitor-salt}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:[*],https://localhost:[*],http://127.0.0.1:[*],https://127.0.0.1:[*]}
+      RETENTION_EVENTS_MONTHS: ${RETENTION_EVENTS_MONTHS:-144}
+      GEOIP_DB: ${GEOIP_DB:-/app/geoip/GeoLite2-City.mmdb}
       SPRING_PROFILES_ACTIVE: prod
       LIQUIBASE_CONTEXTS: prod
+    volumes:
+      - ./geoip:/app/geoip:ro
     ports:
-      - "${API_PORT:-8080}:8080"
+      - "127.0.0.1:${API_PORT:-8080}:8080"
     restart: unless-stopped
 
   web:
@@ -46,7 +52,22 @@ services:
     depends_on:
       - api
     ports:
-      - "${WEB_PORT:-3000}:80"
+      - "${WEB_PORT:-5180}:80"
+    restart: unless-stopped
+
+  # Atualiza a base GeoLite2 periodicamente. Opcional: só roda com --profile geoip.
+  # Requer GEOIPUPDATE_ACCOUNT_ID e GEOIPUPDATE_LICENSE_KEY no deploy/.env.
+  geoip:
+    image: maxmindinc/geoipupdate:latest
+    container_name: analytics-geoip
+    profiles: ["geoip"]
+    environment:
+      GEOIPUPDATE_ACCOUNT_ID: ${GEOIPUPDATE_ACCOUNT_ID:-}
+      GEOIPUPDATE_LICENSE_KEY: ${GEOIPUPDATE_LICENSE_KEY:-}
+      GEOIPUPDATE_EDITION_IDS: ${GEOIPUPDATE_EDITION_IDS:-GeoLite2-City}
+      GEOIPUPDATE_FREQUENCY: ${GEOIPUPDATE_FREQUENCY:-24}
+    volumes:
+      - ./geoip:/usr/share/GeoIP
     restart: unless-stopped
 
 volumes:

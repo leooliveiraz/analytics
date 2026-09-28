@@ -82,7 +82,15 @@ export function SettingsPage() {
 
   const project = projectQuery.data;
   const snippet = project
-    ? `<script defer src="${window.location.origin}/js/analytics.js" data-key="${project.publicKey}"></script>`
+    ? [
+        `<script defer src="${window.location.origin}/js/analytics.js"`,
+        `        data-key="${project.publicKey}"`,
+        `        data-outbound="true"`,
+        `        data-download="true"`,
+        `        data-images="true"`,
+        `        data-sections="true"`,
+        `        data-scroll="true"></script>`,
+      ].join("\n")
     : "";
 
   return (
@@ -101,7 +109,10 @@ export function SettingsPage() {
         </p>
         <div className="code">{snippet}</div>
         <p className="muted" style={{ fontSize: 13 }}>
-          Eventos customizados: <code>window.analytics.track("signup", {"{ plan: \"pro\" }"})</code>
+          Cliques: marque elementos com <code>data-analytics</code> (ex:{" "}
+          <code>&lt;button data-analytics="signup"&gt;</code>). Seções:{" "}
+          <code>&lt;section data-analytics-section="hero"&gt;</code>. Eventos customizados:{" "}
+          <code>window.analytics.track("signup", {"{ plan: \"pro\" }"})</code>.
         </p>
       </div>
 

@@ -1,13 +1,21 @@
 package com.analytics.analytics
 
 import com.analytics.analytics.dto.BreakdownResponse
+import com.analytics.analytics.dto.ElementStatRow
 import com.analytics.analytics.dto.EventRow
+import com.analytics.analytics.dto.GeoStatItem
+import com.analytics.analytics.dto.HeatmapResponse
+import com.analytics.analytics.dto.ImageStatRow
 import com.analytics.analytics.dto.OverviewResponse
+import com.analytics.analytics.dto.PageMetricRow
 import com.analytics.analytics.dto.PageResponse
 import com.analytics.analytics.dto.RealtimeResponse
+import com.analytics.analytics.dto.SectionStatRow
+import com.analytics.analytics.dto.SessionDetailResponse
 import com.analytics.analytics.dto.SessionRow
 import com.analytics.analytics.dto.StatsResponse
 import com.analytics.common.exception.BadRequestException
+import com.analytics.common.exception.NotFoundException
 import com.analytics.project.ProjectService
 import com.analytics.project.Role
 import org.springframework.stereotype.Service
@@ -151,6 +159,127 @@ class AnalyticsService(
             page.coerceAtLeast(0),
             size.coerceIn(1, 200),
         )
+    }
+
+    @Transactional(readOnly = true)
+    fun pages(projectId: UUID, userId: UUID, from: LocalDate, to: LocalDate, limit: Int): List<PageMetricRow> {
+        val zone = timezone(projectId, userId, from, to)
+        return analyticsRepository.pages(
+            projectId,
+            startOfDay(from, zone),
+            startOfDay(to.plusDays(1), zone),
+            limit.coerceIn(1, 200),
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun elements(
+        projectId: UUID,
+        userId: UUID,
+        from: LocalDate,
+        to: LocalDate,
+        path: String?,
+        limit: Int,
+    ): List<ElementStatRow> {
+        val zone = timezone(projectId, userId, from, to)
+        return analyticsRepository.elements(
+            projectId,
+            startOfDay(from, zone),
+            startOfDay(to.plusDays(1), zone),
+            path?.takeIf { it.isNotBlank() },
+            limit.coerceIn(1, 200),
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun images(
+        projectId: UUID,
+        userId: UUID,
+        from: LocalDate,
+        to: LocalDate,
+        path: String?,
+        limit: Int,
+    ): List<ImageStatRow> {
+        val zone = timezone(projectId, userId, from, to)
+        return analyticsRepository.images(
+            projectId,
+            startOfDay(from, zone),
+            startOfDay(to.plusDays(1), zone),
+            path?.takeIf { it.isNotBlank() },
+            limit.coerceIn(1, 200),
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun sections(
+        projectId: UUID,
+        userId: UUID,
+        from: LocalDate,
+        to: LocalDate,
+        path: String?,
+        limit: Int,
+    ): List<SectionStatRow> {
+        val zone = timezone(projectId, userId, from, to)
+        return analyticsRepository.sections(
+            projectId,
+            startOfDay(from, zone),
+            startOfDay(to.plusDays(1), zone),
+            path?.takeIf { it.isNotBlank() },
+            limit.coerceIn(1, 200),
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun heatmap(
+        projectId: UUID,
+        userId: UUID,
+        from: LocalDate,
+        to: LocalDate,
+        type: String,
+        path: String?,
+        device: String?,
+        limit: Int,
+    ): HeatmapResponse {
+        val zone = timezone(projectId, userId, from, to)
+        val normalized = type.lowercase()
+        val scroll = normalized == "scroll"
+        val eventName = when (normalized) {
+            "click" -> "click"
+            "move" -> "mousemove"
+            "scroll" -> "pageleave"
+            else -> throw BadRequestException("Unsupported heatmap type: $type")
+        }
+        val points = analyticsRepository.heatmap(
+            projectId,
+            startOfDay(from, zone),
+            startOfDay(to.plusDays(1), zone),
+            eventName,
+            path?.takeIf { it.isNotBlank() },
+            device?.takeIf { it.isNotBlank() },
+            scroll,
+            limit.coerceIn(100, 20000),
+        )
+        return HeatmapResponse(
+            type = normalized,
+            path = path,
+            maxWeight = points.maxOfOrNull { it.weight } ?: 0L,
+            points = points,
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun geo(projectId: UUID, userId: UUID, from: LocalDate, to: LocalDate): List<GeoStatItem> {
+        val zone = timezone(projectId, userId, from, to)
+        return analyticsRepository.geo(projectId, startOfDay(from, zone), startOfDay(to.plusDays(1), zone))
+    }
+
+    @Transactional(readOnly = true)
+    fun sessionDetail(projectId: UUID, userId: UUID, sessionId: UUID): SessionDetailResponse {
+        projectService.requireRole(projectId, userId, Role.VIEWER)
+        val session = analyticsRepository.findSession(projectId, sessionId)
+            ?: throw NotFoundException("Session not found")
+        val events = analyticsRepository.eventsForSession(projectId, sessionId, 500)
+        return SessionDetailResponse(session, events)
     }
 
     private fun timezone(projectId: UUID, userId: UUID, from: LocalDate, to: LocalDate): ZoneId {

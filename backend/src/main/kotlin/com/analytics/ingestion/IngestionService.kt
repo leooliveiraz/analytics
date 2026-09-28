@@ -52,6 +52,7 @@ class IngestionService(
         geo: GeoLocation,
     ): EnrichedEvent {
         val occurredAt = clamp(dto.occurredAt ?: Instant.now())
+        val props = dto.properties
         val url = dto.url?.trim()?.takeIf { it.isNotEmpty() }
         val uri = parseUri(url)
         val query = parseQuery(uri)
@@ -83,6 +84,25 @@ class IngestionService(
             screenHeight = dto.screenHeight,
             visitorId = visitorId.take(64),
             sessionId = sessionId,
+            elementTag = (dto.elementTag ?: props.str("elementTag"))?.trim()?.takeIf { it.isNotEmpty() }?.take(32),
+            elementSelector = (dto.elementSelector ?: props.str("elementSelector"))?.trim()?.takeIf { it.isNotEmpty() }?.take(1024),
+            elementText = (dto.elementText ?: props.str("elementText"))?.trim()?.takeIf { it.isNotEmpty() }?.take(512),
+            elementId = (dto.elementId ?: props.str("elementId"))?.trim()?.takeIf { it.isNotEmpty() }?.take(255),
+            href = (dto.href ?: props.str("href"))?.trim()?.takeIf { it.isNotEmpty() }?.take(4096),
+            clickX = dto.clickX ?: props.int("clickX"),
+            clickY = dto.clickY ?: props.int("clickY"),
+            clickXPct = (dto.clickXPct ?: props.dbl("clickXPct"))?.coerceIn(0.0, 100.0),
+            clickYPct = (dto.clickYPct ?: props.dbl("clickYPct"))?.coerceIn(0.0, 1000.0),
+            viewportWidth = dto.viewportWidth ?: props.int("viewportWidth"),
+            viewportHeight = dto.viewportHeight ?: props.int("viewportHeight"),
+            pageHeight = dto.pageHeight ?: props.int("pageHeight"),
+            durationMs = (dto.durationMs ?: props.int("durationMs"))?.coerceAtLeast(0),
+            engagedMs = (dto.engagedMs ?: props.int("engagedMs"))?.coerceAtLeast(0),
+            scrollPct = (dto.scrollPct ?: props.int("scrollPct"))?.coerceIn(0, 100),
+            imageKey = (dto.imageKey ?: props.str("imageKey"))?.trim()?.takeIf { it.isNotEmpty() }?.take(1024),
+            imageAlt = (dto.imageAlt ?: props.str("imageAlt"))?.trim()?.takeIf { it.isNotEmpty() }?.take(512),
+            dwellMs = (dto.dwellMs ?: props.int("dwellMs"))?.coerceAtLeast(0),
+            sectionKey = (dto.sectionKey ?: props.str("sectionKey"))?.trim()?.takeIf { it.isNotEmpty() }?.take(255),
             properties = dto.properties,
             occurredAt = occurredAt,
         )
@@ -144,4 +164,10 @@ class IngestionService(
             }
         }.toMap()
     }
+
+    private fun Map<String, Any?>.str(key: String): String? = this[key] as? String
+
+    private fun Map<String, Any?>.int(key: String): Int? = (this[key] as? Number)?.toInt()
+
+    private fun Map<String, Any?>.dbl(key: String): Double? = (this[key] as? Number)?.toDouble()
 }

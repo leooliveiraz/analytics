@@ -111,3 +111,78 @@ export interface PageResponse<T> {
   size: number;
   total: number;
 }
+
+export interface PageMetric {
+  path: string;
+  pageviews: number;
+  visitors: number;
+  entries: number;
+  avgTimeMs: number;
+  avgScrollPct: number;
+}
+
+export interface ElementStat {
+  selector: string;
+  eventName: string;
+  text: string | null;
+  tag: string | null;
+  clicks: number;
+  visitors: number;
+  sessions: number;
+}
+
+export interface ImageStat {
+  imageKey: string;
+  imageAlt: string | null;
+  impressions: number;
+  sessions: number;
+  avgDwellMs: number;
+}
+
+export interface SectionStat {
+  sectionKey: string;
+  views: number;
+  visitors: number;
+  avgDwellMs: number;
+}
+
+export interface HeatmapPoint {
+  x: number;
+  y: number;
+  weight: number;
+}
+
+export interface HeatmapResponse {
+  type: string;
+  path: string | null;
+  maxWeight: number;
+  points: HeatmapPoint[];
+}
+
+export interface GeoStat {
+  country: string;
+  visitors: number;
+  pageviews: number;
+}
+
+export interface SessionDetail {
+  session: SessionRow;
+  events: EventRow[];
+}
+
+export interface SessionRow {
+  id: string;
+  visitorId: string;
+  startedAt: string;
+  endedAt: string | null;
+  durationSeconds: number;
+  pageviews: number;
+  entryPath: string | null;
+  exitPath: string | null;
+  isBounce: boolean;
+  country: string | null;
+  deviceType: string | null;
+  browser: string | null;
+  os: string | null;
+  referrerDomain: string | null;
+}
