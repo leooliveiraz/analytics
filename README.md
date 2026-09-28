@@ -332,7 +332,27 @@ A geolocalização é **opcional** e precisa da base `.mmdb` da MaxMind (GeoLite
 projeto, mas o arquivo de dados **não**. Sem ele, `country/region/city` ficam vazios e o mapa não popula.
 IPs locais/privados são ignorados de propósito.
 
-### Baixar manualmente
+### Sem conta MaxMind (DB-IP Lite — mais simples)
+
+Base gratuita em formato `.mmdb`, **sem cadastro**:
+
+```bash
+bash deploy/geoip/update-dbip.sh        # baixa o mês atual para deploy/geoip/dbip-city-lite.mmdb
+```
+
+Depois aponte no `deploy/.env` e reinicie a API:
+
+```env
+GEOIP_DB=/app/geoip/dbip-city-lite.mmdb
+```
+
+```bash
+cd deploy && docker compose up -d api
+```
+
+Para manter atualizado, rode o script mensalmente (ex.: um cron).
+
+### Baixar manualmente (MaxMind)
 
 1. Crie uma conta/licença em [maxmind.com](https://www.maxmind.com) e gere uma *license key*.
 2. Coloque o arquivo em `deploy/geoip/`:
