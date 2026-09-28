@@ -472,10 +472,42 @@ gunzip -c backup.sql.gz | docker compose exec -T postgres psql -U analytics -d a
 
 > Os dados vivem no volume `analytics_postgres_data`. `docker compose down -v` **apaga tudo**.
 
-## HTTPS com domínio (Caddy)
+## HTTPS com domínio
 
-Sem domínio, o painel fica em `http://IP` e o login trafega em HTTP. Com um subdomínio apontando para o
-servidor (ex.: `analytics.seudominio.com`), adicione um proxy Caddy com TLS automático:
+Sem domínio, o painel fica em `http://IP` e o login trafega em HTTP. Recomendado usar **Cloudflare** na
+frente (proxy + TLS) com um **Origin Certificate** no nginx do próprio container, em modo **Full (strict)**.
+
+### Cloudflare + Origin Certificate (recomendado)
+
+1. **DNS**: no painel do Cloudflare, crie um registro `A` do subdomínio (ex.: `analytics`) apontando para o
+   IP do servidor, com o **proxy ativado** (nuvem laranja).
+2. **Certificado de origem**: em *SSL/TLS → Origin Server → Create Certificate*, gere um certificado para
+   `<seu-dominio>` (ou `*.<seu-dominio>`) e copie o **certificado** e a **chave privada**.
+3. **Instale no servidor** (não versionado — `deploy/certs/` está no `.gitignore`):
+
+   ```bash
+   mkdir -p deploy/certs
+   # cole o conteúdo retornado pelo Cloudflare
+   nano deploy/certs/origin.crt   # Certificate
+   nano deploy/certs/origin.key   # Private Key
+   chmod 600 deploy/certs/origin.key
+   ```
+
+4. **Suba/reconstrua o `web`** (o nginx já está configurado para `443` + redirecionar `80 → 443`):
+
+   ```bash
+   cd deploy && docker compose up -d --build web
+   ```
+
+5. **Modo SSL**: em *SSL/TLS → Overview*, selecione **Full (strict)**. Em *Edge Certificates*, ative
+   **Always Use HTTPS**.
+6. Ajuste `CORS_ALLOWED_ORIGIN_PATTERNS` para o domínio (ou mantenha `*`) e reimplante o snippet com HTTPS.
+
+> O certificado de origem vale por ~15 anos e não precisa renovar. A porta `80` apenas redireciona para `443`.
+
+### Alternativa (Caddy com TLS automático)
+
+Sem Cloudflare, com um subdomínio apontando direto para o servidor, use um proxy Caddy:
 
 ```caddyfile
 analytics.seudominio.com {
@@ -491,7 +523,8 @@ docker run -d --name caddy --restart unless-stopped \
   caddy:2
 ```
 
-Depois, ajuste `CORS_ALLOWED_ORIGIN_PATTERNS` para o domínio (ou `*`) e reimplante o snippet com HTTPS.
+> Nesse caso, mantenha o `web` sem TLS (nginx ouvindo só `:80`) — o Caddy cuida do certificado.
+
 
 ## Testes
 

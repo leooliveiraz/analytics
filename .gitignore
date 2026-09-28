@@ -21,6 +21,12 @@ out/
 .env.local
 *.local
 
+# TLS / certificados (nunca versionar chaves privadas)
+deploy/certs/
+*.key
+*.crt
+*.pem
+
 # GeoIP databases
 *.mmdb
 *.mmdb.gz

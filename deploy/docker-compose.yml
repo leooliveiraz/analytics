@@ -54,6 +54,10 @@ services:
       - api
     ports:
       - "${WEB_PORT:-5180}:80"
+      - "${WEB_PORT_SECURE:-443}:443"
+    volumes:
+      # Certificado de origem do Cloudflare (origin.crt / origin.key) — não versionado.
+      - ./certs:/etc/nginx/certs:ro
     restart: unless-stopped
 
   # Atualiza a base GeoLite2 periodicamente. Opcional: só roda com --profile geoip.
