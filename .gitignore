@@ -21,6 +21,10 @@ out/
 .env.local
 *.local
 
+# GeoIP databases
+*.mmdb
+*.mmdb.gz
+
 # Node / frontend
 node_modules/
 dist/
