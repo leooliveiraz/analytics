@@ -112,6 +112,20 @@ cp .env.example .env      # edite os segredos!
 docker compose up -d --build
 ```
 
+### Atualizar um deploy existente (via Git)
+
+No servidor, dentro do repositório:
+
+```bash
+bash deploy/redeploy.sh     # git pull + docker compose up -d --build
+```
+
+Ou manualmente:
+
+```bash
+git pull --ff-only && cd deploy && docker compose up -d --build
+```
+
 ## Desenvolvimento local
 
 Pré-requisitos: **JDK 21** (`JAVA_HOME` apontando para ele), **Node.js 20+** e **Docker**.
