@@ -96,8 +96,14 @@ export function UserFlowChart({ data }: UserFlowChartProps) {
         margin={{ top: 10, right: 140, bottom: 10, left: 140 }}
       >
         <Tooltip
-          contentStyle={{ background: "#171a21", border: "1px solid #2a2f3a", borderRadius: 8 }}
+          contentStyle={{
+            background: "#171a21",
+            border: "1px solid #2a2f3a",
+            borderRadius: 8,
+            color: "#e6e9ef",
+          }}
           labelStyle={{ color: "#e6e9ef" }}
+          itemStyle={{ color: "#e6e9ef" }}
         />
       </Sankey>
     </ResponsiveContainer>

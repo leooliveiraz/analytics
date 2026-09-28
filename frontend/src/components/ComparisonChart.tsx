@@ -44,8 +44,14 @@ export function ComparisonChart({ points, previous = [], metric }: ComparisonCha
         <XAxis dataKey="label" tick={{ fill: "#8b93a7", fontSize: 12 }} minTickGap={24} />
         <YAxis tick={{ fill: "#8b93a7", fontSize: 12 }} allowDecimals={false} />
         <Tooltip
-          contentStyle={{ background: "#171a21", border: "1px solid #2a2f3a", borderRadius: 8 }}
+          contentStyle={{
+            background: "#171a21",
+            border: "1px solid #2a2f3a",
+            borderRadius: 8,
+            color: "#e6e9ef",
+          }}
           labelStyle={{ color: "#e6e9ef" }}
+          itemStyle={{ color: "#e6e9ef" }}
         />
         <Legend wrapperStyle={{ color: "#8b93a7" }} />
         <Area

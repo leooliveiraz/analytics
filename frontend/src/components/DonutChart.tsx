@@ -33,7 +33,12 @@ export function DonutChart({ items }: DonutChartProps) {
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{ background: "#171a21", border: "1px solid #2a2f3a", borderRadius: 8 }}
+            contentStyle={{
+              background: "#171a21",
+              border: "1px solid #2a2f3a",
+              borderRadius: 8,
+              color: "#e6e9ef",
+            }}
             itemStyle={{ color: "#e6e9ef" }}
             formatter={(value: number) => formatNumber(value)}
           />
